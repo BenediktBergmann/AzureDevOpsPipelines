@@ -1,0 +1,39 @@
+pool:
+  name: Azure Pipelines
+#Your build pipeline references the ‘SolutionName’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
+
+steps:
+- task: microsoft-IsvExpTools.PowerPlatform-BuildTools.tool-installer.PowerPlatformToolInstaller@0
+  displayName: 'Power Platform Tool Installer '
+
+- task: microsoft-IsvExpTools.PowerPlatform-BuildTools.pack-solution.PowerPlatformPackSolution@0
+  displayName: 'Power Platform Pack Solution '
+  inputs:
+    SolutionSourceFolder: '$(Build.SourcesDirectory)\$(SolutionName)'
+    SolutionOutputFile: '$(Build.ArtifactStagingDirectory)\$(SolutionName).zip'
+
+- task: microsoft-IsvExpTools.PowerPlatform-BuildTools.import-solution.PowerPlatformImportSolution@0
+  displayName: 'Power Platform Import Solution '
+  inputs:
+    PowerPlatformEnvironment: 'CGISWE - Benedikt - ALM PLayground'
+    SolutionInputFile: '$(Build.ArtifactStagingDirectory)\$(SolutionName).zip'
+    OverwriteUnmanagedCustomizations: true
+
+- task: microsoft-IsvExpTools.PowerPlatform-BuildTools.publish-customizations.PowerPlatformPublishCustomizations@0
+  displayName: 'Power Platform Publish Customizations '
+  inputs:
+    PowerPlatformEnvironment: 'CGISWE - Benedikt - ALM PLayground'
+
+- task: microsoft-IsvExpTools.PowerPlatform-BuildTools.export-solution.PowerPlatformExportSolution@0
+  displayName: 'Power Platform Export Solution '
+  inputs:
+    PowerPlatformEnvironment: 'CGISWE - Benedikt - ALM PLayground'
+    SolutionName: '$(SolutionName)'
+    SolutionOutputFile: '$(Build.ArtifactStagingDirectory)\$(SolutionName)_managed.zip'
+    Managed: true
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Pipeline Artifact'
+  inputs:
+    targetPath: '$(Build.ArtifactStagingDirectory)\$(SolutionName)_managed.zip'
+    artifact: drop
