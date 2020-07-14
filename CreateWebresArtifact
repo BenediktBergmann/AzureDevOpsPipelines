@@ -1,0 +1,42 @@
+pool:
+  name: Azure Pipelines
+  demands:
+  - msbuild
+  - visualstudio
+
+steps:
+- task: NuGetToolInstaller@1
+  displayName: 'Use NuGet '
+
+- task: NuGetCommand@2
+  displayName: 'NuGet restore'
+
+- task: VSBuild@1
+  displayName: 'Build solution **\Webresources.sln'
+  inputs:
+    solution: '**\Webresources.sln'
+
+- task: CopyFiles@2
+  displayName: 'Copy Files to: Web resources'
+  inputs:
+    SourceFolder: '$(build.sourcesDirectory)\Webresources'
+    Contents: |
+     Webresources/html/**
+     Webresources/css/**
+     Webresources/js/**
+    TargetFolder: '$(build.ArtifactStagingDirectory)'
+
+- task: CopyFiles@2
+  displayName: 'Copy Files to: spkl'
+  inputs:
+    SourceFolder: '$(build.sourcesDirectory)\Webresources'
+    Contents: |
+     release.bat
+     spkl.json
+    TargetFolder: '$(build.ArtifactStagingDirectory)'
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Pipeline Artifact'
+  inputs:
+    targetPath: '$(build.ArtifactStagingDirectory)'
+    artifact: drop
