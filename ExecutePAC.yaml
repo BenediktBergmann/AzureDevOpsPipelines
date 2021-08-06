@@ -1,0 +1,62 @@
+pool:
+  name: ExecutePAC
+  demands:
+  - msbuild
+  - visualstudio
+  
+ variables:
+- name: SolutionName
+  value: Demo
+- name: pacPath
+  value: empty
+
+steps:
+- task: microsoft-IsvExpTools.PowerPlatform-BuildTools.tool-installer.PowerPlatformToolInstaller@0
+  displayName: 'Power Platform Tool Installer '
+- task: microsoft-IsvExpTools.PowerPlatform-BuildTools.publish-customizations.PowerPlatformPublishCustomizations@0
+  displayName: 'Power Platform Publish Customizations '
+  inputs:
+    authenticationType: PowerPlatformSPN
+    PowerPlatformSPN: '<your connection>'
+- task: microsoft-IsvExpTools.PowerPlatform-BuildTools.export-solution.PowerPlatformExportSolution@0
+  displayName: 'Power Platform Export Solution '
+  inputs:
+    authenticationType: PowerPlatformSPN
+    PowerPlatformSPN: '<your connection>'
+    SolutionName: '$(SolutionName)'
+    SolutionOutputFile: '$(Build.ArtifactStagingDirectory)\$(SolutionName).zip'
+- task: microsoft-IsvExpTools.PowerPlatform-BuildTools.unpack-solution.PowerPlatformUnpackSolution@0
+  displayName: 'Power Platform Unpack Solution '
+  inputs:
+    SolutionInputFile: '$(Build.ArtifactStagingDirectory)\$(SolutionName).zip'
+    SolutionTargetFolder: '$(Build.SourcesDirectory)\Solutions\$(SolutionName)'
+- task: NuGetToolInstaller@1
+  displayName: 'Use NuGet '
+- task: NuGetCommand@2
+  displayName: 'Install pac'
+  inputs:
+    command: custom
+    arguments: 'install Microsoft.PowerApps.CLI -OutputDirectory pac'
+- powershell: |
+   $pacNugetFolder = Get-ChildItem "pac" | Where-Object {$_.Name -match "Microsoft.PowerApps.CLI."}
+   
+   $pacPath = $pacNugetFolder.FullName + "\tools"
+   
+   echo "##vso[task.setvariable variable=pacPath]$pacPath"
+  displayName: 'Find pac Folder'
+- powershell: |
+   $env:PATH = $env:PATH + ";" + "$(pacPath)"
+   
+   pac canvas unpack --msapp $(Build.SourcesDirectory)\Solutions\$(SolutionName)\CanvasApps\bebe_almdemoapp_41ec7_DocumentUri.msapp
+  displayName: 'Unpack Canvas App'
+- script: |
+   echo commit all changes
+   git config user.email "<your email>"
+   git config user.name "Automatic Build"
+   git checkout master
+   git add --all
+   git commit -m "Create Export from Dev"
+   
+   echo push code to new repo
+   git -c http.extraheader="AUTHORIZATION: bearer $(System.AccessToken)" push origin master
+  displayName: 'Commit changes to repo'
