@@ -15,19 +15,19 @@ steps:
 - task: microsoft-IsvExpTools.PowerPlatform-BuildTools.import-solution.PowerPlatformImportSolution@0
   displayName: 'Power Platform Import Solution '
   inputs:
-    PowerPlatformEnvironment: 'CGISWE - Benedikt - ALM PLayground'
+    PowerPlatformEnvironment: '<your environment>'
     SolutionInputFile: '$(Build.ArtifactStagingDirectory)\$(SolutionName).zip'
     OverwriteUnmanagedCustomizations: true
 
 - task: microsoft-IsvExpTools.PowerPlatform-BuildTools.publish-customizations.PowerPlatformPublishCustomizations@0
   displayName: 'Power Platform Publish Customizations '
   inputs:
-    PowerPlatformEnvironment: 'CGISWE - Benedikt - ALM PLayground'
+    PowerPlatformEnvironment: '<your environment>'
 
 - task: microsoft-IsvExpTools.PowerPlatform-BuildTools.export-solution.PowerPlatformExportSolution@0
   displayName: 'Power Platform Export Solution '
   inputs:
-    PowerPlatformEnvironment: 'CGISWE - Benedikt - ALM PLayground'
+    PowerPlatformEnvironment: '<your environment>'
     SolutionName: '$(SolutionName)'
     SolutionOutputFile: '$(Build.ArtifactStagingDirectory)\$(SolutionName)_managed.zip'
     Managed: true
